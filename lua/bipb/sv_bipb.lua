@@ -24,7 +24,8 @@ function ply:ipban(time)
     plyip = ply:IPAddress()
     name = ply:Nick()
     id = ply:SteamID()
-    storeip(plyip, time, name, id)
+    unban = math.min(time, 31536000) * 60 + os.time()
+    storeip(plyip, unban, name, id)
 end
 function BIPB.IPBan(plyip, time, name, id)
     if not IsValid(plyip) then return end
@@ -35,10 +36,12 @@ function BIPB.IPBan(plyip, time, name, id)
     storeip(plyip, time, name, id)
 end
 function BIPB.IsBanned(ip)
-    sql.Query("SELECT * FROM bipb_bans WHERE ip='"..ip.."'")
+    return istable(sql.Query("SELECT * FROM bipb_bans WHERE ip='"..ip.."'"))
 end
-function BIPB.Auth(ply)
-    
+function BIPB.Auth(_, ip)
+    if BIPB.IsBanned(ip) then
+        sql.Query("SELECT * FROM bipb_bans WHERE ip='"..ip.."'")
+    end
 end
 
 --[[ INTEGRATIONS ]]
@@ -199,3 +202,4 @@ end
 
 --[[ HOOKS ]]
 hook.Add("Initialize", "BIPB.HOOKS.INIT", BIPB.Init)
+hook.Add("CheckPassword", "BIPB.HOOKS.AUTH", BIPB.Auth)
