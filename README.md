@@ -1,2 +1,9 @@
-# bipb
-Better IP Banning(BIPB) - Better Garry's Mod IP Banning
+
+# Better IP Banning(BIPB)
+
+### Features
+
+ - ULX Integration
+ - SAM Integration
+ - gBan Integration
+ - 
