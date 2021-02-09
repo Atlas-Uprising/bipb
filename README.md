@@ -21,7 +21,7 @@ Description: IP Ban player for set time.
 Variables:
 
 **Integer time** - Time to ban player in minutes
-
+* * *
 ```lua
 BIPB.IPBan(plyip, time, name, id)
 ```
@@ -37,7 +37,7 @@ Variables:
 **String name** - Name of player
 
 **String id** - SteamID of player
-
+* * *
 ```lua
 BIPB.IsBanned(ip)
 ```
@@ -51,7 +51,7 @@ Variables:
 Returns:
 
 Boolean - true if IP is banned or false if not banned.
-
+* * *
 ```lua
 BIPB.Time(ip)
 ```
@@ -66,7 +66,7 @@ Returns:
 
 String - Returns time in unix epoch for unban
       
-
+* * *
 ```lua
 BIPB.Unban(ip)
 ```
