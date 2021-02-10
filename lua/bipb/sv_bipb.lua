@@ -1,8 +1,10 @@
+--[[ CONFIG ]]
+BIPB.AutoDetect = true -- If you want integration with your admin system then set this to true.
+
 --[[ SETUP ]]
 local ply = FindMetaTable("Player")
 BIPB = {}
-include("bipb/sv_config.lua")
-BIPB.AutoDetect = true
+
 
 --[[ LOCAL FUNCTIONS ]]
 local function prnt(msg)
@@ -13,13 +15,8 @@ local function storeip(ip, minutes, nick, steamid)
 end
 
 --[[ GLOBAL FUNCTIONS ]]
-function BIPB.Init()
-    if not sql.TableExists("bipb_bans") then
-        sql.Query("CREATE TABLE bipb_bans(ip TEXT, minutes INTEGER, nick TEXT, steamid TEXT)")
-    end
-end
 local plyip, name, id
-function ply:ipban(time)
+function ply:IPBan(time)
     if not ply:IsPlayer() then prnt("You need to IP ban a player!") return end
     plyip = ply:IPAddress()
     name = ply:Nick()
@@ -28,6 +25,7 @@ function ply:ipban(time)
     storeip(plyip, unban, name, id)
 end
 function BIPB.IPBan(plyip, time, name, id)
+    if not isstring(plyip) then return end
     if not IsValid(plyip) then return end
     if not IsValid(time) then return end
     if not IsValid(name) then return end
@@ -36,11 +34,37 @@ function BIPB.IPBan(plyip, time, name, id)
     storeip(plyip, time, name, id)
 end
 function BIPB.IsBanned(ip)
+    if not isstring(ip) then return end
     return istable(sql.Query("SELECT * FROM bipb_bans WHERE ip='"..ip.."'"))
 end
-function BIPB.Auth(_, ip)
+function BIPB.Time(ip)
+    if not isstring(ip) then return end
+    local result = sql.Query("SELECT * FROM bipb_bans WHERE ip='"..ip.."'")
+    if not IsValid(result) then return 0 end
+    if not result then return 0 end
+    return result[2]
+end
+function BIPB.Unban(ip)
+    if not isstring(ip) then return end
     if BIPB.IsBanned(ip) then
-        sql.Query("SELECT * FROM bipb_bans WHERE ip='"..ip.."'")
+        sql.Query("DELETE FROM bipb_bans WHERE ip = '"..ip.."'")
+    end
+end
+
+--[[ Hook Functions ]]
+local function BIPB.Init()
+    if not sql.TableExists("bipb_bans") then
+        sql.Query("CREATE TABLE bipb_bans(ip TEXT, minutes INTEGER, nick TEXT, steamid TEXT)")
+    end
+end
+local function BIPB.Auth(_, ip)
+    if BIPB.IsBanned(ip) then
+        if BIPB.Time(ip) >= os.time() then
+            return true
+            BIPB.Unban(ip)
+        else
+            return false, "IP Banned"
+        end
     end
 end
 
@@ -55,7 +79,7 @@ if BIPB.AutoDetect then
             if ply:IsListenServerHost() then
                 return
             end
-            ply:ipban(time)
+            ply:IPBan(time)
             ULib.addBan( ply:SteamID(), time, reason, ply:Name(), admin )
         end
     elseif istable(sam) then
@@ -107,7 +131,7 @@ if BIPB.AutoDetect then
                 end
             end
 
-            ply:ipban(time)
+            ply:IPBan(time)
         
             ply.sam_is_banned = true
             set_cached(steamid, nil)
@@ -176,7 +200,7 @@ if BIPB.AutoDetect then
             
             
             
-            target:ipban(time)
+            target:IPBan(time)
             -- Queries
             local addToList = [[ INSERT INTO gban_list(target, target_id, target_uniqueid, target_ip, admin, admin_id, reason, date, length, server_id) VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') ON DUPLICATE KEY UPDATE target_id=target_id ]]
             local addToHistory = [[ INSERT INTO gban_history(target, target_id, target_uniqueid, target_ip, admin, admin_id, reason, date_banned, state, unbanned_by, unbanned_date, server_id) VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') ON DUPLICATE KEY UPDATE target_id=target_id ]]
