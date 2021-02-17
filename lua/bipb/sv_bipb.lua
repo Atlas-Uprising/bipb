@@ -2,7 +2,7 @@
 BIPB.AutoDetect = true -- If you want integration with your admin system then set this to true.
 
 --[[ SETUP ]]
-local ply = FindMetaTable("Player")
+local player = FindMetaTable("Player")
 BIPB = {}
 
 
@@ -16,11 +16,11 @@ end
 
 --[[ GLOBAL FUNCTIONS ]]
 local plyip, name, id
-function ply:IPBan(time)
-    if not ply:IsPlayer() then prnt("You need to IP ban a player!") return end
-    plyip = ply:IPAddress()
-    name = ply:Nick()
-    id = ply:SteamID()
+function player:IPBan(time)
+    if not player:IsPlayer() then prnt("You need to IP ban a player!") return end
+    plyip = player:IPAddress()
+    name = player:Nick()
+    id = player:SteamID()
     unban = math.min(time, 31536000) * 60 + os.time()
     storeip(plyip, unban, name, id)
 end
@@ -105,7 +105,7 @@ if BIPB.AutoDetect then
                 return ply:Kick(reason)
             end
         
-            if not sam.is_steamid(admin_steamid) then -- f71ca7c48b4ddc71be53580cf8ce0f1bef4aef10af1161f19c4660c2c0708cb9
+            if not sam.is_steamid(admin_steamid) then
                 admin_steamid = "Console"
             end
         
