@@ -11,7 +11,7 @@ local function prnt(msg)
     print("[BIPB] " .. msg)
 end
 local function storeip(ip, minutes, nick, steamid)
-    sql.Query("INSERT INTO bipb_bans(ip, minutes, nick, steamid) VALUES('".. ip .."', ".. minutes ..", '".. NICK .."', '".. steamid .."')")
+    sql.Query("INSERT INTO bipb_bans(ip, minutes, nick, steamid) VALUES('" ..  ip .. "', " .. minutes .. ", '" .. NICK .. "', '" .. steamid .. "')")
 end
 
 --[[ GLOBAL FUNCTIONS ]]
@@ -24,22 +24,22 @@ function player:IPBan(time)
     unban = math.min(time, 31536000) * 60 + os.time()
     storeip(plyip, unban, name, id)
 end
-function BIPB.IPBan(plyip, time, name, id)
-    if not isstring(plyip) then return end
-    if not IsValid(plyip) then return end
+function BIPB.IPBan(ip, time, nick, sid)
+    if not isstring(ip) then return end
+    if not IsValid(ip) then return end
     if not IsValid(time) then return end
-    if not IsValid(name) then return end
-    if not IsValid(id) then return end
-    if not isnumber(time) then prnt("You need to include a time to IP Ban for.") return end
-    storeip(plyip, time, name, id)
+    if not IsValid(nick) then return end
+    if not IsValid(sid) then return end
+    if not isnumber(time) then prnt("Error: You need to include a time to IP Ban for.") return end
+    storeip(ip, time, nick, sid)
 end
 function BIPB.IsBanned(ip)
     if not isstring(ip) then return end
-    return istable(sql.Query("SELECT * FROM bipb_bans WHERE ip='"..ip.."'"))
+    return istable(sql.Query("SELECT * FROM bipb_bans WHERE ip='" .. ip .. "'"))
 end
 function BIPB.Time(ip)
     if not isstring(ip) then return end
-    local result = sql.Query("SELECT * FROM bipb_bans WHERE ip='"..ip.."'")
+    local result = sql.Query("SELECT * FROM bipb_bans WHERE ip='" .. ip .. "'")
     if not IsValid(result) then return 0 end
     if not result then return 0 end
     return result[2]
@@ -47,21 +47,21 @@ end
 function BIPB.Unban(ip)
     if not isstring(ip) then return end
     if BIPB.IsBanned(ip) then
-        sql.Query("DELETE FROM bipb_bans WHERE ip = '"..ip.."'")
+        sql.Query("DELETE FROM bipb_bans WHERE ip = '" .. ip .. "'")
     end
 end
 
 --[[ Hook Functions ]]
-local function BIPB.Init()
+local function BIPBInit()
     if not sql.TableExists("bipb_bans") then
         sql.Query("CREATE TABLE bipb_bans(ip TEXT, minutes INTEGER, nick TEXT, steamid TEXT)")
     end
 end
-local function BIPB.Auth(_, ip)
+local function BIPBAuth(_, ip)
     if BIPB.IsBanned(ip) then
         if BIPB.Time(ip) >= os.time() then
-            return true
             BIPB.Unban(ip)
+            return true
         else
             return false, "IP Banned"
         end
@@ -139,91 +139,10 @@ if BIPB.AutoDetect then
             ply:Kick(sam.format_ban_message(admin_name, admin_steamid, reason, unban_date))
         end
     elseif istable(gBan) then
-        gBan:PlayerBan = function(caller, target, time, reason)
-            local steam64 = target:SteamID64()
-            local tsteamid = target:SteamID()
-            if self.Bans[ steam64 ] then return "steamid.duplicate" end
-        
-            local current_time = os.time()
-            local ftime = time
-            local time = ( time == 0 and 0 ) or os.time() + (time * 60)
-            
-            local nick, steamid = "CONSOLE", "CONSOLE"
-            if IsValid( caller ) then
-                if not gBan.Config.Hierarchy[ caller:GetUserGroup() ] then 
-                    gBan:AddChatMessage( caller, gBan:Translate( "NoAccess", gBan.Config.Language ) )
-                    return
-                end
-                nick = caller:Nick()
-                steamid = caller:SteamID()
-            end
-            
-            local tnick, tip = target:Nick(), target:IPAddress()
-            
-            if not reason then
-                reason = "No reason specified."
-            end
-            
-            if reason == "" then
-                reason = "No reason specified."	
-            end
-        
-            local denyban = hook.Call( "gBan.ShouldPlayerBan", nil,
-                {  
-                    [ "Name" ] = tnick,
-                    [ "SteamID" ] = tsteamid,
-                    [ "SteamID64" ] = steam64,
-                    [ "IP" ] = tip,
-                    [ "Admin" ] = nick,
-                    [ "AdminID" ] = steamid,
-                    [ "Reason" ] = reason,
-                    [ "Duration" ] = ftime,
-                } 
-            )
-            
-            if denyban then
-                if type.istable( denyban ) then 
-                    tnick = denyban[ "Name" ]
-                    tsteamid = denyban[ "SteamID" ]
-                    steam64 = denyban[ "SteamID64" ]
-                    tip = denyban[ "IP" ]
-                    nick = denyban[ "Admin" ]
-                    steamid = denyban[ "AdminID" ]
-                    reason = denyban[ "Reason" ]
-                    ftime = denyban[ "Duration" ]
-                    time = ( time == 0 and 0 ) or os.time() + (ftime * 60)  
-                else
-                    print( "[gBan] Failed to ban player " .. tnick .. " ( Action was denied by a hook )")
-                    return
-                end
-            end
-            
-            
-            
-            target:IPBan(time)
-            -- Queries
-            local addToList = [[ INSERT INTO gban_list(target, target_id, target_uniqueid, target_ip, admin, admin_id, reason, date, length, server_id) VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') ON DUPLICATE KEY UPDATE target_id=target_id ]]
-            local addToHistory = [[ INSERT INTO gban_history(target, target_id, target_uniqueid, target_ip, admin, admin_id, reason, date_banned, state, unbanned_by, unbanned_date, server_id) VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') ON DUPLICATE KEY UPDATE target_id=target_id ]]
-            
-            self:Query( addToList:format(self:Escape(tnick), self:Escape(tsteamid), self:Escape(steam64), self:Escape(tip), self:Escape(nick), self:Escape(steamid), self:Escape(reason), self:Escape(tostring(current_time)), self:Escape(tostring(time)), gBan.ID))
-            self:Query( addToHistory:format(self:Escape(tnick), self:Escape(tsteamid), self:Escape(steam64), self:Escape(tip), self:Escape(nick), self:Escape(steamid), self:Escape(reason), self:Escape(tostring(current_time)), (time == 0 and "2") or "1", (time == 0 and "" or nick), self:Escape(tostring(time)), gBan.ID))
-            self.Bans[ steam64 ] = {name = tnick, steamid = tsteamid, uniqueid = steam64, ipaddress = tip, admin = nick, admin_id = steamid, reason = reason, date = current_time, length = time, server = gBan.ID}
-            self:AddChatMessage( false, Color(255, 0, 0), nick, color_white, " " .. self:Translate( "HasBanned", self.Config.Language ) .. " ", Color(255, 255, 0), tnick, color_white, " - " .. self:Translate( "Duration", self.Config.Language ) .. ": ", Color(255, 255, 0), (time == 0 and self:Translate( "Permanent", self.Config.Language ) or tostring(ftime)), color_white, (time == 0 and "! (" or " minutes! ("), Color(255, 255, 0), reason, color_white, ")" )
-            self.History[#gBan.History + 1] = {name = tnick, steamid = tsteamid, uniqueid = steam64, ipaddress = tip, admin = nick, admin_id = steamid, reason = reason, date_banned = current_time, state = (time == 0 and 2 or 1), unbanned_by = (time == 0 and "" or nick), unbanned_date = (time == 0 and 0 or length), server = gBan.ID}
-        
-            local message = self:Translate( "BanMessage", self.Config.Language )
-            message = message:Replace("{admin}", gBan.Bans[ steam64 ].admin )
-            message = message:Replace("{reason}", reason)
-            message = message:Replace("{date_banned}", os.date("%d/%m/%Y @ %X", current_time))
-            message = message:Replace("{unban_date}", time == 0 and "Never" or os.date("%d/%m/%Y @ %X", time))			
-            target:Kick( message )
-            
-            net.Start( "gBan.AlertUpdate" )
-            net.Broadcast()
-        end
+        -- gBan support coming in future. Code isn't easy to add.
     end
 end
 
 --[[ HOOKS ]]
-hook.Add("Initialize", "BIPB.HOOKS.INIT", BIPB.Init)
-hook.Add("CheckPassword", "BIPB.HOOKS.AUTH", BIPB.Auth)
+hook.Add("Initialize", "BIPB.HOOKS.INIT", BIPBInit)
+hook.Add("CheckPassword", "BIPB.HOOKS.AUTH", BIPBAuth)

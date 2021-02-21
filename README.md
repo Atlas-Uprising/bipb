@@ -42,7 +42,7 @@ Variables:
 BIPB.IsBanned(ip)
 ```
 
-Description: Ban an IP.
+Description: Checks to see if IP is banned.
 
 Variables:
 
@@ -56,7 +56,7 @@ Boolean - true if IP is banned or false if not banned.
 BIPB.Time(ip)
 ```
 
-Description: Ban an IP.
+Description: Unix Epoch time of unban.
 
 Variables:
 
@@ -71,7 +71,7 @@ String - Returns time in unix epoch for unban
 BIPB.Unban(ip)
 ```
 
-Description: Ban an IP.
+Description: Unban an IP.
 
 Variables:
 
