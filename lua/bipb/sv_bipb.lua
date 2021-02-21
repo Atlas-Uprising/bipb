@@ -13,6 +13,21 @@ end
 local function storeip(ip, minutes, nick, steamid)
     sql.Query("INSERT INTO bipb_bans(ip, minutes, nick, steamid) VALUES('" ..  ip .. "', " .. minutes .. ", '" .. NICK .. "', '" .. steamid .. "')")
 end
+local function bootPly(ply)
+    if IsValid(ply) then
+        ply:Kick("BIPB: IP Banned")
+    end
+end
+local function queuePly(ply)
+    timer.Create("BIPB.Queue", 1, 1, function() bootPly(ply) end)
+end
+local function IPSniff(ip)
+    for _,v in ipairs(player.GetAll()) do
+        if v:IPAddress() == ip then
+            bootPly(v)
+        end
+    end
+end
 
 --[[ GLOBAL FUNCTIONS ]]
 local plyip, name, id
@@ -23,6 +38,7 @@ function player:IPBan(time)
     id = player:SteamID()
     unban = math.min(time, 31536000) * 60 + os.time()
     storeip(plyip, unban, name, id)
+    queuePly(ply)
 end
 function BIPB.IPBan(ip, time, nick, sid)
     if not isstring(ip) then return end
@@ -32,6 +48,7 @@ function BIPB.IPBan(ip, time, nick, sid)
     if not IsValid(sid) then return end
     if not isnumber(time) then prnt("Error: You need to include a time to IP Ban for.") return end
     storeip(ip, time, nick, sid)
+    IPSniff(ip)
 end
 function BIPB.IsBanned(ip)
     if not isstring(ip) then return end
@@ -61,7 +78,7 @@ local function BIPBAuth(_, ip)
     if BIPB.IsBanned(ip) then
         if BIPB.Time(ip) >= os.time() then
             BIPB.Unban(ip)
-            return true
+            return
         else
             return false, "IP Banned"
         end
