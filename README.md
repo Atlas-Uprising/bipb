@@ -4,9 +4,10 @@
 
 -   ULX Integration
 -   SAM Integration
--   gBan Integration
+-   ~~gBan Integration~~ _Coming Soon_
 -   Developer API
 -   Optimized
+-   Easy Integration
 
 * * *
 
